@@ -1,1 +1,492 @@
+import React, { useState, useEffect } from 'react';
+import { Calculator, TrendingUp, DollarSign, PieChart, BarChart3, Calendar, FileText, Target } from 'lucide-react';
 
+const AdvancedAccountingCalculator = () => {
+  const [activeTab, setActiveTab] = useState('basic');
+  const [display, setDisplay] = useState('0');
+  const [previousValue, setPreviousValue] = useState(null);
+  const [operation, setOperation] = useState(null);
+  const [waitingForNewValue, setWaitingForNewValue] = useState(false);
+  
+  // Financial calculations state
+  const [loanAmount, setLoanAmount] = useState('');
+  const [interestRate, setInterestRate] = useState('');
+  const [loanTerm, setLoanTerm] = useState('');
+  const [futureValue, setFutureValue] = useState('');
+  const [presentValue, setPresentValue] = useState('');
+  const [periods, setPeriods] = useState('');
+  const [rate, setRate] = useState('');
+  
+  // Investment calculations
+  const [principal, setPrincipal] = useState('');
+  const [monthlyContribution, setMonthlyContribution] = useState('');
+  const [years, setYears] = useState('');
+  const [annualReturn, setAnnualReturn] = useState('');
+  
+  // Results
+  const [results, setResults] = useState({});
+
+  const inputNumber = (num) => {
+    if (waitingForNewValue) {
+      setDisplay(String(num));
+      setWaitingForNewValue(false);
+    } else {
+      setDisplay(display === '0' ? String(num) : display + num);
+    }
+  };
+
+  const inputDecimal = () => {
+    if (waitingForNewValue) {
+      setDisplay('0.');
+      setWaitingForNewValue(false);
+    } else if (display.indexOf('.') === -1) {
+      setDisplay(display + '.');
+    }
+  };
+
+  const clear = () => {
+    setDisplay('0');
+    setPreviousValue(null);
+    setOperation(null);
+    setWaitingForNewValue(false);
+  };
+
+  const performOperation = (nextOperation) => {
+    const inputValue = parseFloat(display);
+
+    if (previousValue === null) {
+      setPreviousValue(inputValue);
+    } else if (operation) {
+      const currentValue = previousValue || 0;
+      const newValue = calculate(currentValue, inputValue, operation);
+
+      setDisplay(String(newValue));
+      setPreviousValue(newValue);
+    }
+
+    setWaitingForNewValue(true);
+    setOperation(nextOperation);
+  };
+
+  const calculate = (firstValue, secondValue, operation) => {
+    switch (operation) {
+      case '+': return firstValue + secondValue;
+      case '-': return firstValue - secondValue;
+      case '*': return firstValue * secondValue;
+      case '/': return firstValue / secondValue;
+      case '=': return secondValue;
+      default: return secondValue;
+    }
+  };
+
+  const calculateLoan = () => {
+    const P = parseFloat(loanAmount);
+    const r = parseFloat(interestRate) / 100 / 12;
+    const n = parseFloat(loanTerm) * 12;
+    
+    if (P && r && n) {
+      const monthlyPayment = P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const totalPayment = monthlyPayment * n;
+      const totalInterest = totalPayment - P;
+      
+      setResults({
+        ...results,
+        monthlyPayment: monthlyPayment.toFixed(2),
+        totalPayment: totalPayment.toFixed(2),
+        totalInterest: totalInterest.toFixed(2)
+      });
+    }
+  };
+
+  const calculateFutureValue = () => {
+    const pv = parseFloat(presentValue);
+    const r = parseFloat(rate) / 100;
+    const n = parseFloat(periods);
+    
+    if (pv && r && n) {
+      const fv = pv * Math.pow(1 + r, n);
+      setResults({
+        ...results,
+        calculatedFV: fv.toFixed(2)
+      });
+    }
+  };
+
+  const calculateInvestment = () => {
+    const P = parseFloat(principal) || 0;
+    const PMT = parseFloat(monthlyContribution) || 0;
+    const r = parseFloat(annualReturn) / 100 / 12;
+    const n = parseFloat(years) * 12;
+    
+    if (r && n) {
+      const futureValueLumpSum = P * Math.pow(1 + r, n);
+      const futureValueAnnuity = PMT * (Math.pow(1 + r, n) - 1) / r;
+      const totalFV = futureValueLumpSum + futureValueAnnuity;
+      const totalContributions = P + (PMT * n);
+      const totalEarnings = totalFV - totalContributions;
+      
+      setResults({
+        ...results,
+        investmentFV: totalFV.toFixed(2),
+        totalContributions: totalContributions.toFixed(2),
+        totalEarnings: totalEarnings.toFixed(2)
+      });
+    }
+  };
+
+  const tabs = [
+    { id: 'basic', label: 'Basic Calculator', icon: Calculator },
+    { id: 'loan', label: 'Loan Calculator', icon: DollarSign },
+    { id: 'investment', label: 'Investment', icon: TrendingUp },
+    { id: 'future', label: 'Future Value', icon: Target },
+    { id: 'ratios', label: 'Financial Ratios', icon: PieChart },
+    { id: 'reports', label: 'Reports', icon: FileText }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2 flex items-center justify-center gap-3">
+            <Calculator className="text-yellow-400" size={40} />
+            Advanced Accounting Calculator
+          </h1>
+          <p className="text-purple-200">Professional financial calculations with beautiful interface</p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-2 mb-6 bg-white/10 backdrop-blur-md rounded-2xl p-2">
+          {tabs.map((tab) => {
+            const IconComponent = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-black shadow-lg'
+                    : 'text-white hover:bg-white/20'
+                }`}
+              >
+                <IconComponent size={18} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Basic Calculator */}
+          {activeTab === 'basic' && (
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <Calculator className="text-yellow-400" />
+                Scientific Calculator
+              </h3>
+              
+              <div className="bg-black/30 rounded-2xl p-6 mb-4">
+                <div className="text-right text-3xl font-mono text-white mb-2 min-h-[50px] flex items-center justify-end">
+                  {display}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                {/* Calculator buttons */}
+                <button onClick={clear} className="bg-red-500 hover:bg-red-600 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                  C
+                </button>
+                <button onClick={() => setDisplay(display.slice(0, -1) || '0')} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                  ⌫
+                </button>
+                <button onClick={() => performOperation('/')} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                  ÷
+                </button>
+                <button onClick={() => performOperation('*')} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                  ×
+                </button>
+
+                {[7, 8, 9].map(num => (
+                  <button key={num} onClick={() => inputNumber(num)} className="bg-gray-600 hover:bg-gray-500 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                    {num}
+                  </button>
+                ))}
+                <button onClick={() => performOperation('-')} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                  -
+                </button>
+
+                {[4, 5, 6].map(num => (
+                  <button key={num} onClick={() => inputNumber(num)} className="bg-gray-600 hover:bg-gray-500 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                    {num}
+                  </button>
+                ))}
+                <button onClick={() => performOperation('+')} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                  +
+                </button>
+
+                {[1, 2, 3].map(num => (
+                  <button key={num} onClick={() => inputNumber(num)} className="bg-gray-600 hover:bg-gray-500 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                    {num}
+                  </button>
+                ))}
+                <button onClick={() => performOperation('=')} className="bg-green-500 hover:bg-green-600 text-white rounded-xl p-4 font-bold row-span-2 transition-all duration-200 hover:scale-105">
+                  =
+                </button>
+
+                <button onClick={() => inputNumber(0)} className="bg-gray-600 hover:bg-gray-500 text-white rounded-xl p-4 font-bold col-span-2 transition-all duration-200 hover:scale-105">
+                  0
+                </button>
+                <button onClick={inputDecimal} className="bg-gray-600 hover:bg-gray-500 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105">
+                  .
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Loan Calculator */}
+          {activeTab === 'loan' && (
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <DollarSign className="text-green-400" />
+                Loan Calculator
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-purple-200 mb-2">Loan Amount ($)</label>
+                  <input
+                    type="number"
+                    value={loanAmount}
+                    onChange={(e) => setLoanAmount(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="100000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-200 mb-2">Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={interestRate}
+                    onChange={(e) => setInterestRate(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="5.5"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-200 mb-2">Loan Term (years)</label>
+                  <input
+                    type="number"
+                    value={loanTerm}
+                    onChange={(e) => setLoanTerm(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="30"
+                  />
+                </div>
+                
+                <button
+                  onClick={calculateLoan}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl p-4 font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  Calculate Loan
+                </button>
+                
+                {results.monthlyPayment && (
+                  <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl p-4 border border-green-400/30">
+                    <h4 className="text-green-300 font-bold mb-2">Loan Results:</h4>
+                    <p className="text-white">Monthly Payment: <span className="text-green-300 font-bold">${results.monthlyPayment}</span></p>
+                    <p className="text-white">Total Payment: <span className="text-green-300 font-bold">${results.totalPayment}</span></p>
+                    <p className="text-white">Total Interest: <span className="text-green-300 font-bold">${results.totalInterest}</span></p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Investment Calculator */}
+          {activeTab === 'investment' && (
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <TrendingUp className="text-blue-400" />
+                Investment Calculator
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-purple-200 mb-2">Initial Investment ($)</label>
+                  <input
+                    type="number"
+                    value={principal}
+                    onChange={(e) => setPrincipal(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="10000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-200 mb-2">Monthly Contribution ($)</label>
+                  <input
+                    type="number"
+                    value={monthlyContribution}
+                    onChange={(e) => setMonthlyContribution(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-200 mb-2">Investment Period (years)</label>
+                  <input
+                    type="number"
+                    value={years}
+                    onChange={(e) => setYears(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="20"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-200 mb-2">Annual Return (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={annualReturn}
+                    onChange={(e) => setAnnualReturn(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="7"
+                  />
+                </div>
+                
+                <button
+                  onClick={calculateInvestment}
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl p-4 font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  Calculate Investment
+                </button>
+                
+                {results.investmentFV && (
+                  <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl p-4 border border-blue-400/30">
+                    <h4 className="text-blue-300 font-bold mb-2">Investment Results:</h4>
+                    <p className="text-white">Future Value: <span className="text-blue-300 font-bold">${results.investmentFV}</span></p>
+                    <p className="text-white">Total Contributions: <span className="text-blue-300 font-bold">${results.totalContributions}</span></p>
+                    <p className="text-white">Total Earnings: <span className="text-green-300 font-bold">${results.totalEarnings}</span></p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Future Value Calculator */}
+          {activeTab === 'future' && (
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <Target className="text-yellow-400" />
+                Future Value Calculator
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-purple-200 mb-2">Present Value ($)</label>
+                  <input
+                    type="number"
+                    value={presentValue}
+                    onChange={(e) => setPresentValue(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="5000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-200 mb-2">Interest Rate (% per period)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="8"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-purple-200 mb-2">Number of Periods</label>
+                  <input
+                    type="number"
+                    value={periods}
+                    onChange={(e) => setPeriods(e.target.value)}
+                    className="w-full bg-black/30 text-white rounded-xl p-3 border border-purple-300/30 focus:border-yellow-400 focus:outline-none"
+                    placeholder="10"
+                  />
+                </div>
+                
+                <button
+                  onClick={calculateFutureValue}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-xl p-4 font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  Calculate Future Value
+                </button>
+                
+                {results.calculatedFV && (
+                  <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-4 border border-yellow-400/30">
+                    <h4 className="text-yellow-300 font-bold mb-2">Future Value Result:</h4>
+                    <p className="text-white">Future Value: <span className="text-yellow-300 font-bold">${results.calculatedFV}</span></p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Additional panels for other tabs */}
+          {(activeTab === 'ratios' || activeTab === 'reports') && (
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/20 lg:col-span-2">
+              <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                {activeTab === 'ratios' ? (
+                  <>
+                    <PieChart className="text-pink-400" />
+                    Financial Ratios & Analysis
+                  </>
+                ) : (
+                  <>
+                    <FileText className="text-indigo-400" />
+                    Financial Reports
+                  </>
+                )}
+              </h3>
+              
+              <div className="text-center text-purple-200 py-12">
+                <div className="text-6xl mb-4">🚀</div>
+                <h4 className="text-xl font-bold mb-2">Coming Soon!</h4>
+                <p>Advanced {activeTab === 'ratios' ? 'ratio analysis and financial metrics' : 'report generation and data visualization'} features are under development.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Stats Panel */}
+        <div className="mt-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-3xl p-6 border border-purple-400/30">
+          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <BarChart3 className="text-purple-400" />
+            Quick Financial Insights
+          </h3>
+          <div className="grid md:grid-cols-3 gap-4 text-center">
+            <div className="bg-black/20 rounded-xl p-4">
+              <div className="text-green-400 text-2xl font-bold">+12.5%</div>
+              <div className="text-purple-200">Market Growth</div>
+            </div>
+            <div className="bg-black/20 rounded-xl p-4">
+              <div className="text-blue-400 text-2xl font-bold">3.2%</div>
+              <div className="text-purple-200">Average Interest</div>
+            </div>
+            <div className="bg-black/20 rounded-xl p-4">
+              <div className="text-yellow-400 text-2xl font-bold">85%</div>
+              <div className="text-purple-200">Success Rate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdvancedAccountingCalculator;
